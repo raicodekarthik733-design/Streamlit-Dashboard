@@ -7,7 +7,7 @@ import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "best_model (3).pkl"
+MODEL_PATH = BASE_DIR / "best_model.pkl"
 FEATURES_PATH = BASE_DIR / "features.pkl"
 DECISION_THRESHOLD = 0.84
 
