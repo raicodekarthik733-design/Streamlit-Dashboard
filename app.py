@@ -7,7 +7,7 @@ import streamlit as st
 import sys
 
 
-MODEL_PATH = Path("best_model.pkl")
+MODEL_PATH = Path("best_model (3).pkl")
 FEATURES_PATH = Path("features.pkl")
 DECISION_THRESHOLD = 0.84
 
