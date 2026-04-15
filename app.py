@@ -6,8 +6,8 @@ import pandas as pd
 import streamlit as st
 
 
-MODEL_PATH = "best_model.pkl"
-FEATURES_PATH = "features.pkl"
+MODEL_PATH = Path("best_model.pkl")
+FEATURES_PATH = Path("features.pkl")
 DECISION_THRESHOLD = 0.84
 
 
@@ -28,9 +28,13 @@ def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) ->
 
 @st.cache_resource
 def load_artifacts():
-    model = joblib.load(MODEL_PATH)
-    feature_names = joblib.load(FEATURES_PATH)
-    return model, feature_names
+    try:
+        model = joblib.load(MODEL_PATH)
+        feature_names = joblib.load(FEATURES_PATH)
+        return model, feature_names
+    except Exception as e:
+        st.error(f"Error loading model or features: {e}")
+        return None, None
 
 
 def build_feature_row(
@@ -77,11 +81,17 @@ def main():
     st.title("Fraud Detection Dashboard")
     st.write("Use the inputs below to predict whether a transaction is likely fraudulent.")
 
+    # Check if files exist
     if not MODEL_PATH.exists() or not FEATURES_PATH.exists():
         st.error("Model file or features file is missing in this folder.")
         st.stop()
 
+    # Load artifacts
     model, feature_names = load_artifacts()
+    
+    if model is None or feature_names is None:
+        st.error("Failed to load model or features. Please check the files.")
+        st.stop()
 
     with st.sidebar:
         st.header("Model Info")
@@ -154,40 +164,44 @@ def main():
         submitted = st.form_submit_button("Predict Fraud Risk")
 
     if submitted:
-        input_df = build_feature_row(
-            amount=amount,
-            hour=hour,
-            day_of_week=day_of_week,
-            month=month,
-            age=age,
-            category_enc=category_enc,
-            gender=gender,
-            city_pop=city_pop,
-            lat=lat,
-            long_value=long_value,
-            merch_lat=merch_lat,
-            merch_long=merch_long,
-            feature_names=feature_names,
-        )
+        try:
+            input_df = build_feature_row(
+                amount=amount,
+                hour=hour,
+                day_of_week=day_of_week,
+                month=month,
+                age=age,
+                category_enc=category_enc,
+                gender=gender,
+                city_pop=city_pop,
+                lat=lat,
+                long_value=long_value,
+                merch_lat=merch_lat,
+                merch_long=merch_long,
+                feature_names=feature_names,
+            )
 
-        probability = float(model.predict_proba(input_df)[0][1])
-        prediction = int(probability >= DECISION_THRESHOLD)
+            probability = float(model.predict_proba(input_df)[0][1])
+            prediction = int(probability >= DECISION_THRESHOLD)
 
-        result_col1, result_col2 = st.columns([1, 1])
+            result_col1, result_col2 = st.columns([1, 1])
 
-        with result_col1:
-            st.subheader("Prediction Result")
-            if prediction == 1:
-                st.error("Prediction: Fraudulent Transaction")
-            else:
-                st.success("Prediction: Legitimate Transaction")
+            with result_col1:
+                st.subheader("Prediction Result")
+                if prediction == 1:
+                    st.error("Prediction: Fraudulent Transaction")
+                else:
+                    st.success("Prediction: Legitimate Transaction")
 
-            st.metric("Fraud Probability", f"{probability:.2%}")
-            st.metric("Distance (km)", f"{input_df.loc[0, 'distance_km']:.2f}")
+                st.metric("Fraud Probability", f"{probability:.2%}")
+                st.metric("Distance (km)", f"{input_df.loc[0, 'distance_km']:.2f}")
 
-        with result_col2:
-            st.subheader("Model Input Preview")
-            st.dataframe(input_df, use_container_width=True)
+            with result_col2:
+                st.subheader("Model Input Preview")
+                st.dataframe(input_df, use_container_width=True)
+                
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
 
     with st.expander("Feature Names Used by the Model"):
         st.write(feature_names)
