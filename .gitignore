@@ -1,0 +1,7 @@
+*.csv
+*.ipynb
+*.docx
+*.pdf
+*.zip
+__pycache__/
+.ipynb_checkpoints/
